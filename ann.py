@@ -3,7 +3,7 @@ from math import exp
 import pandas as pd
 import numpy as np
 
-LEARN_RATE = 0.5
+LEARN_RATE = 0.05
 
 def generateNeuralNet(numLayers, lenLayer, lenInput):
 
@@ -27,6 +27,12 @@ def generateNeuralNet(numLayers, lenLayer, lenInput):
 def sigm(x):
 	return ( 1 / ( 1 + exp(-x) ) )
 
+def relu(x):
+	return max(0, x)
+
+def dif_relu(x):
+	return 1 if x > 0 else 0
+
 def forward(ann, values, numLayers, lenLayer, lenInput):
 
 	for j in range(lenLayer):
@@ -36,7 +42,7 @@ def forward(ann, values, numLayers, lenLayer, lenInput):
 		for k in range(lenInput):
 			summation += ann[0][j][1][k] * values[k]
 
-		ann[0][j][0] = sigm(summation)
+		ann[0][j][0] = relu(summation)
 
 	for i in range(1, numLayers+1):
 		for j in range(lenLayer):
@@ -46,7 +52,7 @@ def forward(ann, values, numLayers, lenLayer, lenInput):
 			for k in range(lenLayer):
 				summation += ann[i][j][1][k] * ann[i-1][k][0]
 
-			ann[i][j][0] = sigm(summation)
+			ann[i][j][0] = relu(summation)
 
 
 	summation = 0
@@ -79,7 +85,7 @@ def backward(ann, values, expecValue, numLayers, lenLayer, lenInput):
 			for u in ann[j+1]:
 				sum_dif += u[2] * ( u[1][i] + LEARN_RATE * u[2] * ann[j][i][0] ) #Ocasiona erro numérico
 
-			difError = sum_dif * ( ( 1 -  ann[j][i][0] ) * ann[j][i][0] )
+			difError = sum_dif * dif_relu( ann[j][i][0] )
 			ann[j][i][2] = difError
 
 			for k in range(lenLayer):
@@ -91,7 +97,7 @@ def backward(ann, values, expecValue, numLayers, lenLayer, lenInput):
 		for u in ann[1]:
 			sum_dif += u[2] * ( u[1][i] + LEARN_RATE * u[2] * ann[0][i][0] ) #Ocasiona erro numérico
 
-		difError = sum_dif * ( ( 1 -  ann[0][i][0] ) * ann[0][i][0] )
+		difError = sum_dif * dif_relu( ann[0][i][0] )
 		ann[0][i][2] = difError
 
 		for k in range(lenInput):
@@ -124,10 +130,11 @@ def test(ann, numLayers, lenLayer, testData, lenInput):
 
 #Data
 
-data = pd.read_csv("dataset/breast-cancer.csv")
+# data = pd.read_csv("dataset/breast-cancer.csv")
+data = pd.read_csv("dataset/test.csv")
 
-numLayers = 5
-lenLayer = 5
+numLayers = 100
+lenLayer = 10
 lenInput = data.shape[1] - 1
 
 ann = generateNeuralNet(numLayers, lenLayer, data.shape[1])
@@ -138,5 +145,5 @@ ann = train(ann, numLayers, lenLayer, data.iloc[ 0 : 2 * data.shape[0] // 3], le
 print(test(ann, numLayers, lenLayer, data.iloc[2 * data.shape[0] // 3 : ], lenInput))
 
 ann = generateNeuralNet(numLayers, lenLayer, lenInput)
-print(forward(ann, [-1]*9, numLayers, lenLayer, 9)[numLayers][0][0])
-print(forward(ann, [1]*9, numLayers, lenLayer, 9)[numLayers][0][0])
+print(forward(ann, [0]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
+print(forward(ann, [1]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
