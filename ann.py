@@ -1,9 +1,9 @@
-from random import random
+from random import random, choice
 from math import exp
 import pandas as pd
 import numpy as np
 
-LEARN_RATE = 0.05
+LEARN_RATE = 0.1
 
 def generateNeuralNet(numLayers, lenLayer, lenInput):
 
@@ -11,21 +11,28 @@ def generateNeuralNet(numLayers, lenLayer, lenInput):
 
 	layer = []
 	for j in range(lenLayer):
-		layer.append( [ 0, [ random() for k in range(lenInput) ], 1 ] )
+		layer.append( [ 0, [ choice([-1, 1])*random() for k in range(lenInput) ], 1 ] )
 	ann.append(layer)
 
 	for i in range(1, numLayers+1):
 		layer = []
 		for j in range(lenLayer):
-			layer.append( [ 0, [ random() for k in range(lenLayer) ], 1 ] )
+			layer.append( [ 0, [ choice([-1, 1])*random() for k in range(lenLayer) ], 1 ] )
 		ann.append(layer)
 
-	ann.append( [ [ 0, [ random() for k in range(lenLayer) ], 1 ] ] )
+	ann.append( [ [ 0, [ choice([-1, 1])*random() for k in range(lenLayer) ], 1 ] ] )
 
 	return ann
 
 def sigm(x):
-	return ( 1 / ( 1 + exp(-x) ) )
+	try:
+		e = exp(-x)
+	except OverflowError:
+		e = float("inf")
+	except:
+		e = 0
+	finally:
+		return ( 1 / ( 1 + e ) )
 
 def relu(x):
 	return max(0, x)
@@ -58,21 +65,21 @@ def forward(ann, values, numLayers, lenLayer, lenInput):
 	summation = 0
 
 	for k in range(lenLayer):
-		#print(ann[numLayers][0][1][k])
+
 		summation += ann[numLayers+1][0][1][k] * ann[numLayers][k][0]
 
 	ann[numLayers+1][0][0] = sigm(summation)
+	# print("Sum: %.2f"%summation)
+	# print("Sigmoid: %.2f"%sigm(summation))
 	#print("Return - %.5f"%ann[numLayers][0][0])
 
 	return ann
 
 def backward(ann, values, expecValue, numLayers, lenLayer, lenInput):
 
-	#print("Return - %.5f"%ann[numLayers][0][0])
-	#print("Class - %.5f"%expecValue)
-
 	difError = 2*( ann[numLayers+1][0][0] - expecValue ) * ( 1 - ann[numLayers+1][0][0] ) * ann[numLayers+1][0][0]
 	ann[numLayers+1][0][2] = difError
+	#print(difError)
 
 	for i in range(lenLayer):
 		ann[numLayers+1][0][1][i] -= LEARN_RATE * difError * ann[numLayers][i][0]
@@ -131,19 +138,21 @@ def test(ann, numLayers, lenLayer, testData, lenInput):
 #Data
 
 # data = pd.read_csv("dataset/breast-cancer.csv")
-data = pd.read_csv("dataset/test.csv")
+data = pd.read_csv("dataset/breast-cancer.csv")
 
-numLayers = 100
-lenLayer = 10
+numLayers = 30
+lenLayer = 7
 lenInput = data.shape[1] - 1
 
-ann = generateNeuralNet(numLayers, lenLayer, data.shape[1])
+ann = generateNeuralNet(numLayers, lenLayer, lenInput)
+print(ann[numLayers+1][0][1])
 
 #Train
 ann = train(ann, numLayers, lenLayer, data.iloc[ 0 : 2 * data.shape[0] // 3], lenInput)
 
 print(test(ann, numLayers, lenLayer, data.iloc[2 * data.shape[0] // 3 : ], lenInput))
 
-ann = generateNeuralNet(numLayers, lenLayer, lenInput)
-print(forward(ann, [0]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
-print(forward(ann, [1]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
+print(ann[numLayers+1][0])
+print(forward(ann, [-1]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
+print(forward(ann, [0.1]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
+print(forward(ann, [0.9]*9, numLayers, lenLayer, 9)[numLayers+1][0][0])
