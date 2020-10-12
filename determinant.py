@@ -1,5 +1,6 @@
 from math import sqrt
 
+#O(N³)
 def qr_decomposition(matrix):
 
     q = [[] for i in range(len(matrix))]
